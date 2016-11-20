@@ -1,0 +1,13 @@
+// 将设置放入此文件中以覆盖默认值和用户设置。
+{
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/.DS_Store": true,
+        "**/*.js.map":true,
+        "**/*.css.map":true,
+        "**/*.js":{"when": "$(basename).ts"}
+    },
+    "typescript.tsdk": "node_modules/typescript/lib"
+}
