@@ -73,6 +73,8 @@ function update(src:TreeNode){//src展开或收起的节点
         .attr('transform',d=>`translate(${src.ox},${src.oy}) scale(0.01)`)
         .style('fill-opacity',0.01)
         .style('stroke-opacity',0.01)
+        .on('mouseenter',d=>poListNodeShow())
+        .on('mouseleave',d=>poListNodeHide())
     let mainNodeGroup = nodeGroup.append('g').attr('class','mainNode');
     mainNodeGroup.append('title').text(d=>d.title);
     mainNodeGroup.append('circle').attr('r',r).on('click',d=>{//切换展开或收起被点节点
@@ -88,7 +90,8 @@ function update(src:TreeNode){//src展开或收起的节点
         for(let poListIndex = 0;poListIndex<d.poList.length;poListIndex++){
             let poListGroup = d3.select(nodeGroup[0][nodesGroupIndex]).insert('g','g')
                 .attr('class','poListNode')
-                .attr('transform',`translate(${(1+poListIndex)*r*0.2},0)`)
+                .attr('transform',`translate(${(1+poListIndex)*r*0.2},0) rotate(-180)`)
+            poListGroup.append('title').text(d=>d.poList[poListIndex].entityName);
             poListGroup.append('circle').attr('r',r)
             poListGroup.append('text').attr('style',`font-size:${fontSize}`).attr('transform',`translate(0,${fontSize/4})`).text(()=>{
                 let entityName = d.poList[poListIndex].entityName;
@@ -151,6 +154,19 @@ function update(src:TreeNode){//src展开或收起的节点
     
     //给节点数据挂上原位置坐标
     nodes.forEach(d=>{d.oy=d.y;d.ox=d.x});
+}
+
+function poListNodeShow(){
+    let e = d3.event as MouseEvent;
+    let poListGroup = d3.select(e.target).selectAll('.poListNode');
+    poListGroup.transition().duration(duration)
+    .attr('transform',(d,index)=>`translate(${(1+Math.abs(poListGroup.length-index))*r*1.85},0) rotate(360)`)
+}
+function poListNodeHide(){
+    let e = d3.event as MouseEvent;
+    let poListGroup = d3.select(e.currentTarget).selectAll('.poListNode');
+    poListGroup.transition().duration(duration)
+    .attr('transform',(d,index)=>`translate(${(1+Math.abs(poListGroup.length-index))*r*0.2},0) rotate(-180)`)
 }
 
 
