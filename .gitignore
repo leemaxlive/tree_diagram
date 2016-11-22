@@ -6,6 +6,6 @@ npm-debug.log*
 node_modules
 build
 
-app/**/*.js
 
-**/*.js.map
+"**/*.js.map":true
+"**/*.css.map":true

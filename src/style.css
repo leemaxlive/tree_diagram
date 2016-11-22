@@ -23,13 +23,25 @@
 .node text{
   fill: #000;
   pointer-events: none;
-  font-size: 1em;
+  text-anchor:middle;
 }
+
+.node .mainNode{
+  cursor: pointer
+}
+.node .mainNode circle{
+  fill:#d7ebff;
+}
+.node .mainNode .nodeContracted{
+  fill:#c7c7e2;
+}
+
 .link {
   fill: none;
   stroke: #ccc;
   stroke-width: 1.5px;
 }
 
-
-
+/*.titleTip{
+  display: none;
+}*/
