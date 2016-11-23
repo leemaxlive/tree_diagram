@@ -18,7 +18,7 @@ let root:DataNode;
 let showDepth = 2;
 let viewWidth = $(document).width();
 let viewHeight = $(document).height();
-let r = 40;
+let r = 34;
 let nodeIntervalY = 250;
 let i = 0;
 let duration = 500;
@@ -26,10 +26,19 @@ let svgGroupPaddingTop = 2*r;
 let iconCircleR = r*0.35;
 let iconWidth = r/2.2;
 let iconHeight = r/2.2;
-let fontSize = 16;
+let zoom = d3.behavior.zoom()
+    .scaleExtent([0.2,4])
+    .on('zoom',()=>{
+        let e = d3.event as d3.ZoomEvent;
+        let scale = e.scale;
+        let translate = e.translate;
+        svgGroup.attr('transform',`translate(${translate[0]},${translate[1]+svgGroupPaddingTop}) scale(${scale})`)
+    })
 let svg = d3.select('#svgDom')
         .attr('width',viewWidth)
         .attr('height',viewHeight)
+        .attr('oncontextmenu','return false')
+        .call(zoom)
 let svgGroup = svg.append('g').attr('transform',`translate(0,${svgGroupPaddingTop})`);
 let tree = d3.layout.tree<TreeNode>().size([viewWidth,viewHeight-(svgGroupPaddingTop+2*r)]);
 let diagonal = d3.svg.diagonal<TreeNode>().projection(d=>[d.x,d.y]);
@@ -80,8 +89,8 @@ function update(src:TreeNode){//src展开或收起的节点
     mainNodeGroup.append('circle').attr('r',r).on('click',d=>{//切换展开或收起被点节点
         if(!d.children && d._children.length<1) return;
         toggle(d);update(d);
-    });
-    mainNodeGroup.append('text').attr('style',`font-size:${fontSize}`).attr('transform',`translate(0,${fontSize/4})`).text(d=>d.title.length>5?d.title.slice(0,5)+'...':d.title);
+    })
+    mainNodeGroup.append('text').text(d=>d.title.length>5?d.title.slice(0,5)+'...':d.title);
     //选中所有主节点的circle,判断是否展开，并渐变切换颜色
     nodeUpdate.selectAll('.mainNode circle').transition().duration(duration).style('fill',d=>d._children.length>0?'#c7c7e2':'#d7ebff');
     
@@ -93,7 +102,7 @@ function update(src:TreeNode){//src展开或收起的节点
                 .attr('transform',`translate(${(1+poListIndex)*r*0.2},0) rotate(-180)`)
             poListGroup.append('title').text(d=>d.poList[poListIndex].entityName);
             poListGroup.append('circle').attr('r',r)
-            poListGroup.append('text').attr('style',`font-size:${fontSize}`).attr('transform',`translate(0,${fontSize/4})`).text(()=>{
+            poListGroup.append('text').text(()=>{
                 let entityName = d.poList[poListIndex].entityName;
                 return entityName.length>5?d.title.slice(0,5)+'...':entityName;
             })

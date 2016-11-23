@@ -3,6 +3,9 @@
     padding: 0;
     list-style: none;
 }
+html{
+  font-size: 62.5%;
+}
 .node circle{
   fill: #fff;
   stroke: steelblue;
@@ -14,16 +17,13 @@
   stroke-width: 1.5px;
 }
 
-.node rect.meng{
-  fill: #fff;
-  stroke: #fff;
-  stroke-width: 3px;
-}
-
 .node text{
   fill: #000;
   pointer-events: none;
   text-anchor:middle;
+  font-size: 1.2rem;
+  transform: translate(0,0.25rem);
+  display: inline-block;
 }
 
 .node .mainNode{
@@ -41,7 +41,3 @@
   stroke: #ccc;
   stroke-width: 1.5px;
 }
-
-/*.titleTip{
-  display: none;
-}*/
