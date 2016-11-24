@@ -25,9 +25,9 @@ let nodeIntervalY = 250;
 let i = 0;
 let duration = 500;
 let svgGroupPaddingTop = 2*r;
-let iconCircleR = r*0.35;
-let iconWidth = r/2.2;
-let iconHeight = r/2.2;
+let iconCircleR = r*0.5;
+let iconWidth = 1.3*iconCircleR;
+let iconHeight = 1.3*iconCircleR;
 let nodeToggled:TreeNode[]=[];//记录变化节点
 
 let firstSpreadNode:DataNode=null;
@@ -61,8 +61,10 @@ fetch('/data.json').then(res=>res.json()).then(data=>{
     nodeToggled = [];
     
     depth = Number(depthSelector.val());
-    showDepth();
+    toggleAll(root);
+    update(nodeToggled);
 })
+
 //每DataNode节点初始化一个_children属性
 function addProps(d:DataNode){
     d._children = [];
@@ -71,30 +73,36 @@ function addProps(d:DataNode){
         if(deepest < d.treeLevel) deepest = d.treeLevel;
     }
 }
+
+//逐层递归进入到数据最后一层,进入到最后，向上逐层执行剩余语句
 function toggleAll(d:DataNode){
-    //逐层递归进入到数据最后一层
-    if(d.children && d.children.length>0){
+    if(d.children && d.children.length>0){//该层为展开层
         d.children.forEach(toggleAll);
-    }
-    else if(d._children.length>0){
-        if(!firstSpreadNode) firstSpreadNode = d;//按递归顺序，记录每一个分支的第一个要展开的节点!!!
-        d._children.forEach(toggleAll);
-    }
-    //递归完成，从最里层逐层向外运行以下代码，判断如果该层大于等于指定层且为展开时将其收起;如果小时指定层且为收起时将其展开
-    if(d.treeLevel>=depth && d.children && d.children.length>0){
-        toggle(d);
-        //判断该变化节点是否为指定层，如果是用nodeToggled记录
-        if(d.treeLevel==depth)
-            nodeToggled.push(d);
-    }else if(d.treeLevel<depth && d._children.length>0){
-        toggle(d);
-        //判断该变化节点是否为firstSpreadNode记录的节点，如果是则用nodeToggled记录，并重置firstSpreadNode记录，用于下一个递归分支!!!
-        if(d.treeLevel == firstSpreadNode.treeLevel){
-            nodeToggled.push(d);
-            firstSpreadNode=null;
+        //如果该层大于等于指定层将其收起，小于指定层时不做处理
+        if(d.treeLevel>=depth){
+            toggle(d);
+            //由于鼠标点击时不是层层收起，而只是收起点击层，形成数据不是层层收起。而select选择层会让该层收起，但不一定是所要记录的变化点，也可能是招标点击的收起点
+            //判断该变化节点是指定层且它以上的层都是展开的（!firstSpreadNode），则该层就是所要记录的变化点，用nodeToggled记录
+            if(d.treeLevel==depth && !firstSpreadNode)
+                nodeToggled.push(d);
         }
     }
-        
+    else if(d._children.length>0){//该层为收起层
+        if(!firstSpreadNode) firstSpreadNode = d;//按递归顺序，记录每一个分支的第一个要展开的节点!!!
+        d._children.forEach(toggleAll);
+        //如果该层小于指定层将其展开
+        if(d.treeLevel<depth){
+            toggle(d);
+            //判断该变化节点是否为firstSpreadNode记录的节点，如果是则用nodeToggled记录，并重置firstSpreadNode记录，用于下一个递归分支!!!
+            if(d.viewId == firstSpreadNode.viewId){
+                nodeToggled.push(d);
+                firstSpreadNode=null;
+            }
+        }else if(d.treeLevel >= depth){//如果该层不小于指定层则不展开，就不用nodeToggled记录，但如果该层又是firstSpreadNode时重置firstSpreadNode记录（相邻层收起是这样的情况）
+            if(d.viewId == firstSpreadNode.viewId)
+                firstSpreadNode=null;
+        }
+    }   
 }
 
 function toggle(d:DataNode){
@@ -107,27 +115,40 @@ function toggle(d:DataNode){
     }
 }
 
-function update(src:TreeNode){//src展开或收起的节点
-    console.log(nodeToggled);
+function update(src:TreeNode[]){//src展开或收起的节点
     let nodes = tree.nodes(root);
+    console.log(nodeToggled)
     // nodes.forEach(d=>d.y=d.depth*nodeIntervalY);//重置高度，让每一层在固定的高度
 
     let nodeUpdate = svgGroup.selectAll('g.node').data(nodes,d=>d.viewId.toString());//通过唯一标识来更新数据，否则按datum参数遍历的顺序来更新（树形结构的数据遍历顺序会让更新不对应）
     
     let nodeGroup = nodeUpdate.enter()//新增的节点变形并置于src原位置节点上
         .append('g')
-        .attr('class','node')
-        .attr('transform',d=>`translate(${src.ox},${src.oy}) scale(0.01)`)
         .style('fill-opacity',0.01)
         .style('stroke-opacity',0.01)
+        .attr('class','node')
         .on('mouseenter',d=>poListNodeShow())
         .on('mouseleave',d=>poListNodeHide())
+        .attr('transform',d=>{
+            let o = d.parent;
+            let translate:string;
+            for(let item of src){
+                function abc(d:TreeNode){
+                    if(d && d.viewId != item.viewId)
+                        abc(d.parent as TreeNode);
+                    else if(d && d.viewId == item.viewId)
+                        translate = `translate(${item.ox},${item.oy}) scale(0.01)`;
+                }
+                abc(d);
+            }
+            return translate;
+        })
     let mainNodeGroup = nodeGroup.append('g').attr('class','mainNode');
     mainNodeGroup.append('title').text(d=>d.title);
     mainNodeGroup.append('circle').attr('r',r).on('click',d=>{//切换展开或收起被点节点
         if(!d.children && d._children.length<1) return;
         resetDepthSelectorOption();
-        toggle(d);update(d);
+        toggle(d);update([d]);
     })
     mainNodeGroup.append('text').text(d=>d.title.length>5?d.title.slice(0,5)+'...':d.title);
     //选中所有主节点的circle,判断是否展开，并渐变切换颜色
@@ -171,22 +192,45 @@ function update(src:TreeNode){//src展开或收起的节点
     
     //多余的节点变形，位置变到src新数据的位置上
     nodeUpdate.exit().transition().duration(duration)
-        .attr('transform',d=>`translate(${src.x},${src.y}) scale(0.01)`)
         .style('fill-opacity',0.01)
         .style('stroke-opacity',0.01)
+        .attr('transform',d=>{
+            let translate:string;
+            for(let item of src){
+                function abc(d:TreeNode){
+                    if(d && d.viewId != item.viewId)
+                        abc(d.parent as TreeNode);
+                    else if(d && d.viewId == item.viewId)
+                        translate = `translate(${item.x},${item.y}) scale(0.01)`;
+                }
+                abc(d);
+            }
+            return translate;
+        })
         .remove();
   
     let links = tree.links(nodes);
     let linkUpdate = svgGroup.selectAll('.link').data(links,d=>d.target.viewId.toString());//根据唯一标识更新数据
-
+    
+    //新增连线的起点和终点都是展开点
     linkUpdate.enter()
         .insert('path','g')
-        .attr('class','link')
         .style('stroke-opacity',0.01)
+        .attr('class','link')
         .attr('d',d=>{
-            let source = $.extend({},d.source,{x:src.ox,y:src.oy});
+            let position:{x:number,y:number};
+            for(let item of src){
+                function abc(d:TreeNode){
+                    if(d && d.viewId != item.viewId)
+                        abc(d.parent as TreeNode)
+                    else if(d && d.viewId == item.viewId)
+                        position={x:item.ox,y:item.oy}
+                }
+                abc(d.source)
+            }
+            let source = $.extend({},d.source,position);
             return diagonal({source,target:source});
-        })//新增连线的起点和终点都是展开点
+        })
     
     //新增连线和已存在的线变形，位置回到新数据位置
     linkUpdate.transition().duration(duration)
@@ -194,18 +238,32 @@ function update(src:TreeNode){//src展开或收起的节点
         .style('stroke-opacity',1);
     //多余的连线变形，使起点和终点都是src的新数据位置
     linkUpdate.exit().transition().duration(duration)
-        .attr('d',d=>diagonal({source:src,target:src}))
+        .attr('d',d=>{
+           let position:{x:number,y:number};
+            for(let item of src){
+                function abc(d:TreeNode){
+                    if(d && d.viewId != item.viewId)
+                        abc(d.parent as TreeNode)
+                    else if(d && d.viewId == item.viewId)
+                        position={x:item.x,y:item.y}
+                }
+                abc(d.source)
+            }
+            let source = $.extend({},d.source,position);
+            return diagonal({source,target:source});
+        })
         .style('stroke-opacity',0.01)
         .remove();
     
     //给节点数据挂上原位置坐标
     nodes.forEach(d=>{d.oy=d.y;d.ox=d.x});
-    
+    //重置变化节点记录
     nodeToggled=[];
 }
 
 function poListNodeShow(){
     let e = d3.event as MouseEvent;
+    svgGroup.append(()=>e.target);//显示时，移至最顶
     let poListGroup = d3.select(e.target).selectAll('.poListNode');
     poListGroup.transition().duration(duration)
     .attr('transform',(d,index)=>`translate(${(1+Math.abs(poListGroup.length-index))*r*1.85},0) rotate(360)`)
@@ -220,7 +278,8 @@ function poListNodeHide(){
 depthSelector.change(function(){
     depth = Number($(this).val());
     if(depth==0) return;
-    showDepth();
+    toggleAll(root);
+    update(nodeToggled);
 })
 function resetDepthSelectorOption(){
     depthSelector[0][0].selected = true;
@@ -230,22 +289,6 @@ function appendDepthSelectorOption(){
         depthSelector.append(`<option value=${i+1}>${i+1}</option>`)
     }
     depthSelector[0][2].selected = true;
-}
-
-function showDepth(){
-    if(depth == 1){
-        toggleAll(root); 
-        update(root);
-    }else if(depth == 2){
-        toggleAll(root);
-        update(root);
-    }else if(depth >= deepest){
-        toggleAll(root);
-        update(root);
-    }else{
-        toggleAll(root);
-        update(root);
-    }
 }
 
 
