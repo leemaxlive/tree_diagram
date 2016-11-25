@@ -5,7 +5,7 @@ module.exports = {
         new ExtractTextPlugin('[name].css')
     ],
     entry:{
-        app:['./src/app']
+        app:['./src/main']
     },
     output: {
         path: './build',

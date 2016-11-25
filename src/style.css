@@ -31,6 +31,7 @@ html{
 }
 .node .mainNode circle{
   fill:#d7ebff;
+  transition: fill 0.5s;
 }
 .node .mainNode .nodeContracted{
   fill:#c7c7e2;

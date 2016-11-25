@@ -14,24 +14,44 @@ interface DataNode{
     viewId:number;
 }
 type TreeNode = DataNode & d3.layout.tree.Node;
+
+interface Option{
+    size?:number;
+    data:DataNode;
+    duration?:number;
+    depthSelector?:string;
+    initDepth?:number
+}
+
+let defaultOption:Option = {
+    size:34,
+    data:null,
+    duration:500,
+    depthSelector:'',
+    initDepth:2
+};
+
+let svg:d3.Selection<any>;
+let viewWidth:number;
+let viewHeight:number;
 let root:DataNode;
-let depthSelector = $('.depthSelector');
+let depthSelector:JQuery;
 let depth:number;
-let deepest=0;
-let viewWidth = $(document).width();
-let viewHeight = $(document).height();
-let r = 34;
-let nodeIntervalY = 250;
-let i = 0;
-let duration = 500;
-let svgGroupPaddingTop = 2*r;
-let iconCircleR = r*0.5;
-let iconWidth = 1.3*iconCircleR;
-let iconHeight = 1.3*iconCircleR;
-let nodeToggled:TreeNode[]=[];//记录变化节点
+let deepest:number;
+let duration:number;
+let r:number;
+let svgGroupPaddingTop:number;
+let iconCircleR:number;
+let iconWidth:number;
+let iconHeight:number;
+let svgGroup:d3.Selection<any>;
 
-let firstSpreadNode:DataNode=null;
+let nodeToggled:TreeNode[];//记录变化节点
+let firstSpreadNode:DataNode;
 
+let tree:d3.layout.Tree<TreeNode>;
+
+let diagonal = d3.svg.diagonal<TreeNode>().projection(d=>[d.x,d.y]);
 let zoom = d3.behavior.zoom()
     .scaleExtent([0.2,4])
     .on('zoom',()=>{
@@ -40,30 +60,55 @@ let zoom = d3.behavior.zoom()
         let translate = e.translate;
         svgGroup.attr('transform',`translate(${translate[0]},${translate[1]+svgGroupPaddingTop}) scale(${scale})`)
     })
-let svg = d3.select('#svgDom')
-        .attr('width',viewWidth)
-        .attr('height',viewHeight)
-        .attr('oncontextmenu','return false')
-        .call(zoom)
-let svgGroup = svg.append('g').attr('transform',`translate(0,${svgGroupPaddingTop})`);
-let tree = d3.layout.tree<TreeNode>().size([viewWidth,viewHeight-(svgGroupPaddingTop+2*r)]);
-let diagonal = d3.svg.diagonal<TreeNode>().projection(d=>[d.x,d.y]);
 
-fetch('/data.json').then(res=>res.json()).then(data=>{
-    root = data.gridViewTree[0];
+export default function treeDiagram(svgId:string,customOption:Option){//初始化函数
+    let option:Option = $.extend({},defaultOption,customOption);
+    checkOption(option,defaultOption);
+
+    svg = d3.select(svgId);
+    viewWidth = Number(svg.attr('width'));
+    viewHeight = Number(svg.attr('height'));
+
+    root = option.data;
     root.ox=viewWidth/2;
     root.oy=0;
+    deepest=0;
     addProps(root);
-    appendDepthSelectorOption();
+    
+    r = option.size;
+    // let nodeIntervalY = 250;
+    duration = option.duration;
+    svgGroupPaddingTop = 2*r;
+    iconCircleR = r*0.5;
+    iconWidth = 1.3*iconCircleR;
+    iconHeight = 1.3*iconCircleR;
+    nodeToggled=[];//记录变化节点
+    firstSpreadNode=null;
+
+
+    svg.attr('oncontextmenu','return false').call(zoom);
+    svgGroup = svg.append('g').attr('transform',`translate(0,${svgGroupPaddingTop})`);
+    tree = d3.layout.tree<TreeNode>().size([viewWidth,viewHeight-(svgGroupPaddingTop+2*r)]);
 
     depth = 1;
     toggleAll(root);
     nodeToggled = [];
     
-    depth = Number(depthSelector.val());
+    depth = option.initDepth;
     toggleAll(root);
     update(nodeToggled);
-})
+    
+    depthSelector = $(option.depthSelector);
+    if(depthSelector && depthSelector.length >0){
+        appendDepthSelectorOption();
+        depthSelector.change(function(){
+            depth = Number($(this).val());
+            if(depth==0) return;
+            toggleAll(root);
+            update(nodeToggled);
+        })
+    }
+}
 
 //每DataNode节点初始化一个_children属性
 function addProps(d:DataNode){
@@ -147,12 +192,13 @@ function update(src:TreeNode[]){//src展开或收起的节点
     mainNodeGroup.append('title').text(d=>d.title);
     mainNodeGroup.append('circle').attr('r',r).on('click',d=>{//切换展开或收起被点节点
         if(!d.children && d._children.length<1) return;
-        resetDepthSelectorOption();
+        if(depthSelector && depthSelector.length>0)
+            resetDepthSelectorOption();
         toggle(d);update([d]);
     })
     mainNodeGroup.append('text').text(d=>d.title.length>5?d.title.slice(0,5)+'...':d.title);
     //选中所有主节点的circle,判断是否展开，并渐变切换颜色
-    nodeUpdate.selectAll('.mainNode circle').transition().duration(duration).style('fill',d=>d._children.length>0?'#c7c7e2':'#d7ebff');
+    nodeUpdate.selectAll('.mainNode circle').attr('class',d=>d._children.length>0?'nodeContracted':'');
     
     //在新增的节点里添加poListNode
     nodeGroup.each((d,nodesGroupIndex)=>{
@@ -208,7 +254,7 @@ function update(src:TreeNode[]){//src展开或收起的节点
             return translate;
         })
         .remove();
-  
+
     let links = tree.links(nodes);
     let linkUpdate = svgGroup.selectAll('.link').data(links,d=>d.target.viewId.toString());//根据唯一标识更新数据
     
@@ -239,7 +285,7 @@ function update(src:TreeNode[]){//src展开或收起的节点
     //多余的连线变形，使起点和终点都是src的新数据位置
     linkUpdate.exit().transition().duration(duration)
         .attr('d',d=>{
-           let position:{x:number,y:number};
+        let position:{x:number,y:number};
             for(let item of src){
                 function abc(d:TreeNode){
                     if(d && d.viewId != item.viewId)
@@ -275,12 +321,6 @@ function poListNodeHide(){
     .attr('transform',(d,index)=>`translate(${(1+Math.abs(poListGroup.length-index))*r*0.2},0) rotate(-180)`)
 }
 
-depthSelector.change(function(){
-    depth = Number($(this).val());
-    if(depth==0) return;
-    toggleAll(root);
-    update(nodeToggled);
-})
 function resetDepthSelectorOption(){
     depthSelector[0][0].selected = true;
 }
@@ -288,7 +328,12 @@ function appendDepthSelectorOption(){
     for(let i = 0 ;i<deepest;i++){
         depthSelector.append(`<option value=${i+1}>${i+1}</option>`)
     }
-    depthSelector[0][2].selected = true;
+    depthSelector.prepend(`<option value=${0}>请选择...</option>`)
+    depthSelector[0][depth].selected = true;
 }
-
-
+function checkOption(option:Option,defaultOption:Option){
+    Object.keys(option).forEach(d=>{
+        if(d == 'data' && typeof option[d] != 'object')
+            throw new Error('DATA MISSING')
+    })
+}
