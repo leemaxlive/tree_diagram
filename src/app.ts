@@ -178,13 +178,13 @@ function update(src:TreeNode[]){//src展开或收起的节点
             let o = d.parent;
             let translate:string;
             for(let item of src){
-                function abc(d:TreeNode){
+                function tempFn(d:TreeNode){
                     if(d && d.viewId != item.viewId)
-                        abc(d.parent as TreeNode);
+                        tempFn(d.parent as TreeNode);
                     else if(d && d.viewId == item.viewId)
                         translate = `translate(${item.ox},${item.oy}) scale(0.01)`;
                 }
-                abc(d);
+                tempFn(d);
             }
             return translate;
         })
@@ -243,13 +243,13 @@ function update(src:TreeNode[]){//src展开或收起的节点
         .attr('transform',d=>{
             let translate:string;
             for(let item of src){
-                function abc(d:TreeNode){
+                function tempFn(d:TreeNode){
                     if(d && d.viewId != item.viewId)
-                        abc(d.parent as TreeNode);
+                        tempFn(d.parent as TreeNode);
                     else if(d && d.viewId == item.viewId)
                         translate = `translate(${item.x},${item.y}) scale(0.01)`;
                 }
-                abc(d);
+                tempFn(d);
             }
             return translate;
         })
@@ -266,13 +266,13 @@ function update(src:TreeNode[]){//src展开或收起的节点
         .attr('d',d=>{
             let position:{x:number,y:number};
             for(let item of src){
-                function abc(d:TreeNode){
+                function tempFn(d:TreeNode){
                     if(d && d.viewId != item.viewId)
-                        abc(d.parent as TreeNode)
+                        tempFn(d.parent as TreeNode)
                     else if(d && d.viewId == item.viewId)
                         position={x:item.ox,y:item.oy}
                 }
-                abc(d.source)
+                tempFn(d.source)
             }
             let source = $.extend({},d.source,position);
             return diagonal({source,target:source});
@@ -287,13 +287,13 @@ function update(src:TreeNode[]){//src展开或收起的节点
         .attr('d',d=>{
         let position:{x:number,y:number};
             for(let item of src){
-                function abc(d:TreeNode){
+                function tempFn(d:TreeNode){
                     if(d && d.viewId != item.viewId)
-                        abc(d.parent as TreeNode)
+                        tempFn(d.parent as TreeNode)
                     else if(d && d.viewId == item.viewId)
                         position={x:item.x,y:item.y}
                 }
-                abc(d.source)
+                tempFn(d.source)
             }
             let source = $.extend({},d.source,position);
             return diagonal({source,target:source});
