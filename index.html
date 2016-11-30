@@ -7,10 +7,17 @@
     <link rel="stylesheet" href="build/app.css">
 </head>
 <body>
-    <div>
-        <select class="depthSelector"></select>
+    <div class="tool">
+        <div>
+            <select class="depthSelector"></select>
+        </div>
+        <div>
+            <input type="checkbox" class="pinSwitch">
+        </div>
     </div>
-    <svg id="svgDom" width='500' height='500'></svg>
+    <div style="width:100%;height:600px;">
+        <svg id="svgDom" width='100%' height='100%'></svg>
+    </div>
     <script src="build/app.js"></script>
 </body>
 </html>

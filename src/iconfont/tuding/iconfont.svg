@@ -1,0 +1,47 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd" >
+<svg xmlns="http://www.w3.org/2000/svg">
+<metadata>
+Created by FontForge 20120731 at Wed Nov 30 09:36:38 2016
+ By admin
+</metadata>
+<defs>
+<font id="iconfont" horiz-adv-x="1024" >
+  <font-face 
+    font-family="iconfont"
+    font-weight="500"
+    font-stretch="normal"
+    units-per-em="1024"
+    panose-1="2 0 6 3 0 0 0 0 0 0"
+    ascent="896"
+    descent="-128"
+    x-height="792"
+    bbox="44 -128 956 896"
+    underline-thickness="0"
+    underline-position="0"
+    unicode-range="U+0078-E6E9"
+  />
+<missing-glyph 
+ />
+    <glyph glyph-name=".notdef" 
+ />
+    <glyph glyph-name=".notdef" 
+ />
+    <glyph glyph-name=".null" horiz-adv-x="0" 
+ />
+    <glyph glyph-name="nonmarkingreturn" horiz-adv-x="341" 
+ />
+    <glyph glyph-name="x" unicode="x" horiz-adv-x="1001" 
+d="M281 543q-27 -1 -53 -1h-83q-18 0 -36.5 -6t-32.5 -18.5t-23 -32t-9 -45.5v-76h912v41q0 16 -0.5 30t-0.5 18q0 13 -5 29t-17 29.5t-31.5 22.5t-49.5 9h-133v-97h-438v97zM955 310v-52q0 -23 0.5 -52t0.5 -58t-10.5 -47.5t-26 -30t-33 -16t-31.5 -4.5q-14 -1 -29.5 -0.5
+t-29.5 0.5h-32l-45 128h-439l-44 -128h-29h-34q-20 0 -45 1q-25 0 -41 9.5t-25.5 23t-13.5 29.5t-4 30v167h911zM163 247q-12 0 -21 -8.5t-9 -21.5t9 -21.5t21 -8.5q13 0 22 8.5t9 21.5t-9 21.5t-22 8.5zM316 123q-8 -26 -14 -48q-5 -19 -10.5 -37t-7.5 -25t-3 -15t1 -14.5
+t9.5 -10.5t21.5 -4h37h67h81h80h64h36q23 0 34 12t2 38q-5 13 -9.5 30.5t-9.5 34.5q-5 19 -11 39h-368zM336 498v228q0 11 2.5 23t10 21.5t20.5 15.5t34 6h188q31 0 51.5 -14.5t20.5 -52.5v-227h-327z" />
+    <glyph glyph-name="tudingfill" unicode="&#xe6e8;" 
+d="M375 788q3 -309 0 -323q-39 -23 -86.5 -69.5t-75.5 -79.5t-28 -35q-11 -13 -6.5 -22t21.5 -9h283v-350q0 -11 8 -19.5t19 -8.5h-1q11 0 19 8.5t8 19.5v350h283q17 0 22.5 10t-3.5 24q-12 15 -32 37.5t-71.5 71.5t-90.5 72q0 3 -0.5 22.5t-0.5 48v62.5v67.5t0.5 61t0.5 45
+t0 16.5l36 71q7 16 0.5 26.5t-23.5 10.5h-295q-17 0 -23.5 -10.5t0.5 -26.5z" />
+    <glyph glyph-name="tudingkong" unicode="&#xe6e9;" 
+d="M509 -76q-10 0 -17 -7t-7 -17v401h334q-3 0 -8 -2q-9 -5 -14 -14q-6 -10 -4 -20q0 -5 2 -8l43 27l-39 -32q-2 2 -7 8q-9 10 -19 22q-33 36 -65 66q-28 27 -52 46q-21 17 -38 27l-19 12l-5 22q-3 13 -2 172v81q1 28 1 58v17v6v12l41 81q-5 -10 3 -23.5t20 -13.5h-295
+q11 0 19.5 13.5t3.5 23.5l41 -81v-12v-6v-17q0 -28 1 -58v-81q1 -158 -2 -172l-4 -22l-20 -12q-13 -8 -28 -19q-28 -21 -61 -55q-31 -30 -62 -67l-18 -22q-4 -5 -6 -8q8 12 -1 31t-24 20h282h51v-401q0 10 -7 17t-17 7v-52l-0.5 24.5t-0.5 27.5zM510 -76l-1 -52
+q-11 1 -18.5 9t-7.5 19v350h-283q-17 0 -21.5 9t6.5 22q12 15 31 38.5t69.5 73t89.5 72.5q1 6 1 87t-1 159v77l-36 71q-7 16 -0.5 26.5t23.5 10.5h295q17 0 23.5 -10.5t-0.5 -26.5l-36 -71q-3 -309 0 -323q39 -23 87.5 -68.5t77.5 -78t29 -34.5q9 -14 3.5 -24t-22.5 -10
+h-283v-350q0 -11 -7.5 -19t-18.5 -9v52z" />
+  </font>
+</defs></svg>

@@ -42,3 +42,11 @@ html{
   stroke: #ccc;
   stroke-width: 1.5px;
 }
+.node .pin{
+  cursor: pointer;
+}
+
+.tool > div{
+  float: left;
+  margin-left: 1rem
+}
