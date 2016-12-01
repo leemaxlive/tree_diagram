@@ -58,3 +58,7 @@ html{
    overflow: hidden;
    cursor: pointer
 }
+
+#svgDom{
+  cursor: all-scroll
+}
