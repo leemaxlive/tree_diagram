@@ -47,6 +47,14 @@ html{
 }
 
 .tool > div{
-  float: left;
-  margin-left: 1rem
+  /*float: left;*/
+  margin-left: 1rem;
+  padding-top: 1rem;
+}
+
+.pinSwitchBtn {
+   width: 3rem; height: 3rem;
+   fill: #666;
+   overflow: hidden;
+   cursor: pointer
 }

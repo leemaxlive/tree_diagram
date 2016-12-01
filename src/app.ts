@@ -123,31 +123,10 @@ export default function treeDiagram(svgId:string,customOption:Option){//初始�
     update(updateNodesData(),nodeToggled);
     
     depthSelector = $(option.depthSelector);
-    if(depthSelector && depthSelector.length >0){
-        appendDepthSelectorOption();
-        depthSelector.change(function(){
-            depth = Number($(this).val());
-            if(depth==0) return;
-            toggleAll(root);
-            update(updateNodesData(),nodeToggled);
-        })
-    }
+    appendDepthSelector();
 
     pinSwitch = $(option.pinSwitch);
-    if(pinSwitch && pinSwitch.length > 0)
-        pinSwitch.on('click',function(){
-            if(!isPinedAll){
-                nodePined = [];
-                nodesClassifiedByTreeLevel.forEach(nodes=>{
-                    nodes.forEach(node=>nodePined.push(node))
-                })
-                isPinedAll = true;
-            }else{
-                nodePined = [];
-                isPinedAll = false;
-            }
-            update(updateNodesData(),nodeToggled);
-        })
+    appendPinSwitchBtn();
 }
 
 //每DataNode节点初始化一个_children属性
@@ -252,8 +231,8 @@ function update(nodes:TreeNode[],src:TreeNode[]){//变化的节点
     mainNodeGroup.append('title').text(d=>d.title);
     mainNodeGroup.append('circle').attr('r',r).on('click',d=>{//切换展开或收起被点节点
         if(!d.children && d._children.length<1) return;
-        if(depthSelector && depthSelector.length>0)
-            resetDepthSelectorOption();
+
+        resetDepthSelector();
         filtChildNodePined(d,d.viewId);
         toggle(d);
         update(updateNodesData(),[d]);
@@ -285,20 +264,28 @@ function update(nodes:TreeNode[],src:TreeNode[]){//变化的节点
                         let currentPinGroup = d3.select(e.currentTarget);
                         let currentNodeGroup = d3.select($(e.currentTarget).closest('.node')[0]);
                         if(currentNodeGroup.attr('class').indexOf('pined') == -1){
-                            currentNodeGroup.attr('class','node pined').on('mouseleave',null);
-                            currentNodeGroup.attr('class','node pined').on('mouseenter',null);
+                            currentNodeGroup.attr('class','node pined').on('mouseleave',null).on('mouseenter',null);
                             currentPinGroup.attr('transform',`translate(${r},0) rotate(45)`).select('use').attr('xlink:href','#icon-tudingfill');
                             nodePined.push(currentNodeGroup.datum());
                         }else{
-                            currentNodeGroup.attr('class','node').on('mouseleave',()=>poListNodeHide());
-                            currentNodeGroup.attr('class','node').on('mouseenter',()=>poListNodeShow());
-                            currentPinGroup.attr('transform',`translate(${r},0) rotate(90)`).select('use').attr('xlink:href','#icon-tudingkong');
+                            currentNodeGroup.attr('class','node');
                             
                             //取消全部PinedAll状态，nodePined只保留视图中仍为pined状态的节点，新生成的节点不会pined
+                            currentPinGroup.attr('transform',`translate(${r},0) rotate(90)`).select('use').attr('xlink:href','#icon-tudingkong');
                             isPinedAll=false;
                             nodePined = svgGroup.selectAll('.node.pined').data();
                             
-                            filtNodePined(currentNodeGroup.datum());
+                            currentNodeGroup.attr('class','node')
+                                .on('mouseleave',()=>{
+                                    poListNodeHide();
+                                    update(updateNodesData(),nodeToggled)
+                                })
+                                .on('mouseenter',function(){
+                                    poListNodeShow();
+                                    shiftNodes(d3.select(this).datum());
+                                    update(svgGroup.selectAll('g.node').data(),nodeToggled);
+                                })
+
                         }
                     })
                 pinGroup.append('circle').attr('r',pinCircleR)
@@ -428,6 +415,8 @@ function update(nodes:TreeNode[],src:TreeNode[]){//变化的节点
     nodes.forEach(d=>{d.oy=d.y;d.ox=d.x});
     //重置变化节点记录
     nodeToggled=[];
+
+    togglePinSwitchBtn();
 }
 
 function poListNodeShow(target?:EventTarget){
@@ -451,15 +440,23 @@ function poListNodeHide(target?:EventTarget){
         .attr('transform',(d,index)=>poListGroup[0].length < 2 ?`translate(${(Math.abs(poListGroup.length-index))*r*0.2},0) rotate(-180)`:`translate(${(1+Math.abs(poListGroup.length-index))*r*0.2},0) rotate(-180)`)
 }
 
-function resetDepthSelectorOption(){
-    depthSelector[0][0].selected = true;
+function resetDepthSelector(){
+    if(depthSelector && depthSelector.length>0)
+        depthSelector[0][0].selected = true;
 }
-function appendDepthSelectorOption(){
+function appendDepthSelector(){
+    if(!depthSelector || depthSelector.length <1) return;
     for(let i = 0 ;i<deepest;i++){
         depthSelector.append(`<option value=${i+1}>${i+1}</option>`)
     }
     depthSelector.prepend(`<option value=${0}>请选择...</option>`)
     depthSelector[0][depth].selected = true;
+    depthSelector.change(function(){
+        depth = Number($(this).val());
+        if(depth==0) return;
+        toggleAll(root);
+        update(updateNodesData(),nodeToggled);
+    })
 }
 function checkOption(option:Option,defaultOption:Option){
     Object.keys(option).forEach(d=>{
@@ -500,4 +497,30 @@ function filtChildNodePined(node:TreeNode,parentId:number){
         node._children.forEach(node=>filtChildNodePined(node,parentId))
     if(node.viewId != parentId)
         filtNodePined(node);
+}
+
+function appendPinSwitchBtn(){
+    if(!pinSwitch || pinSwitch.length < 1) return;
+    pinSwitch.append('<svg aria-hidden="true" class="pinSwitchBtn"><use xlink:href="#icon-switchoff"></use></svg>');
+    pinSwitch.on('click',function(){
+        if(!isPinedAll){
+            nodePined = [];
+            nodesClassifiedByTreeLevel.forEach(nodes=>{
+                nodes.forEach(node=>nodePined.push(node))
+            })
+            isPinedAll = true;
+        }else{
+            nodePined = [];
+            isPinedAll = false;
+        }
+        update(updateNodesData(),nodeToggled);
+    })
+}
+
+function togglePinSwitchBtn(){
+    if(!pinSwitch || pinSwitch.length < 1) return;
+    if(isPinedAll)
+        $('.pinSwitchBtn use').attr('xlink:href','#icon-switchon')
+    else
+        $('.pinSwitchBtn use').attr('xlink:href','#icon-switchoff')
 }
