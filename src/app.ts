@@ -63,6 +63,7 @@ let firstSpreadNode:DataNode;
 let tree:d3.layout.Tree<TreeNode>;
 
 let nodesClassifiedByTreeLevel:TreeNode[][];//分层引用节点数据
+let nodesCount:number;//节点总数
 
 let diagonal = d3.svg.diagonal<TreeNode>().projection(d=>[d.x,d.y]);
 let zoom = d3.behavior.zoom()
@@ -87,6 +88,7 @@ export default function treeDiagram(svgId:string,customOption:Option){//初始�
     root.oy=0;
 
     nodesClassifiedByTreeLevel = [];
+    nodesCount = 0;
     deepest=0;
     formatData(root);
     
@@ -132,7 +134,7 @@ export default function treeDiagram(svgId:string,customOption:Option){//初始�
 //每DataNode节点初始化一个_children属性
 function formatData(d:DataNode){
     d._children = [];
-
+    nodesCount++;
     if(!nodesClassifiedByTreeLevel[d.treeLevel-1])
         nodesClassifiedByTreeLevel[d.treeLevel-1]=[];
     nodesClassifiedByTreeLevel[d.treeLevel-1].push(d);
@@ -196,9 +198,8 @@ function updateNodesData(){
     return nodes;
 }
 
-function update(nodes:TreeNode[],src:TreeNode[]){//变化的节点
-    let nodeUpdate = svgGroup.selectAll('g.node').data(nodes,d=>d.viewId.toString());//通过唯一标识来更新数据，否则按datum参数遍历的顺序来更新（树形结构的数据遍历顺序会让更新不对应）
-    
+function update(nodes:TreeNode[],src:TreeNode[]){//src变化的节点
+    let nodeUpdate = svgGroup.selectAll('.node').data(nodes,d=>d.viewId.toString());//通过唯一标识来更新数据，否则按datum参数遍历的顺序来更新（树形结构的数据遍历顺序会让更新不对应）
     let nodeGroup = nodeUpdate.enter()//新增的节点变形并置于src原位置节点上
         .append('g')
         .style('fill-opacity',0.01)
@@ -229,16 +230,39 @@ function update(nodes:TreeNode[],src:TreeNode[]){//变化的节点
         })
     let mainNodeGroup = nodeGroup.append('g').attr('class','mainNode');
     mainNodeGroup.append('title').text(d=>d.title);
-    mainNodeGroup.append('circle').attr('r',r).on('click',d=>{//切换展开或收起被点节点
+    mainNodeGroup.append('circle').attr('r',r).on('click',function(d){//切换展开或收起被点节点
         if(!d.children && d._children.length<1) return;
+
+        //不让节点在变化时触发事件
+        let currentNodeGroup = d3.select($(this).closest('.node')[0]);
+        currentNodeGroup.on('mouseenter',null).on('mouseleave',null);
+        if(currentNodeGroup.attr('class').indexOf('pined') == -1){
+            poListNodeHide(currentNodeGroup[0][0]);
+            update(updateNodesData(),nodeToggled);
+        }
+        
 
         resetDepthSelector();
         filtChildNodePined(d,d.viewId);
         toggle(d);
         update(updateNodesData(),[d]);
+
+        //节点在变化完成后重新加触发事件（事件排队）
+        setTimeout(()=>{
+            if(currentNodeGroup.attr('class').indexOf('pined') == -1)
+                currentNodeGroup.on('mouseleave',()=>{
+                    poListNodeHide();
+                    update(updateNodesData(),nodeToggled)
+                })
+                .on('mouseenter',function(){
+                    poListNodeShow();
+                    shiftNodes(d3.select(this).datum());
+                    update(svgGroup.selectAll('g.node').data(),nodeToggled);
+                })
+        },duration)
     })
     mainNodeGroup.append('text').text(d=>d.title.length>5?d.title.slice(0,5)+'...':d.title);
-    //选中所有主节点的circle,判断是否展开，并渐变切换颜色
+    //选中所有更新主节点的circle,判断是否展开，并渐变切换颜色
     nodeUpdate.selectAll('.mainNode circle').attr('class',d=>d._children.length>0?'nodeContracted':'');
     
     //在新增的节点里添加poListNode
@@ -278,7 +302,7 @@ function update(nodes:TreeNode[],src:TreeNode[]){//变化的节点
                             currentNodeGroup.attr('class','node')
                                 .on('mouseleave',()=>{
                                     poListNodeHide();
-                                    update(updateNodesData(),nodeToggled)
+                                    update(updateNodesData(),nodeToggled);
                                 })
                                 .on('mouseenter',function(){
                                     poListNodeShow();
@@ -307,7 +331,7 @@ function update(nodes:TreeNode[],src:TreeNode[]){//变化的节点
             currentNodeGroup.attr('class','node pined').on('mouseleave',null).on('mouseenter',null);
             currentPinGroup.attr('transform',`translate(${r},0) rotate(45)`).select('use').attr('xlink:href','#icon-tudingfill');
         })
-    else if(!isPinedAll && nodeUpdate[0].every(item=>d3.select(item).attr('class') == 'node pined'))
+    else if(!isPinedAll && svgGroup.selectAll('.pined')[0].length == nodesCount)
         nodeUpdate[0].forEach(item=>{
             poListNodeHide(item);
             let currentNodeGroup = d3.select(item);
@@ -421,21 +445,21 @@ function update(nodes:TreeNode[],src:TreeNode[]){//变化的节点
 
 function poListNodeShow(target?:EventTarget){
     let e = d3.event as MouseEvent;
-    let currentSvgGroup:d3.Selection<any>;
-    if(!target) currentSvgGroup = d3.select(e.target);
-    else currentSvgGroup = d3.select(target);
+    let currentNodeGroup:d3.Selection<any>;
+    if(!target) currentNodeGroup = d3.select(e.target);
+    else currentNodeGroup = d3.select(target);
     
-    let poListGroup = currentSvgGroup.selectAll('.poListNode');
+    let poListGroup = currentNodeGroup.selectAll('.poListNode');
     poListGroup.transition().duration(duration)
         .attr('transform',(d,index)=>poListGroup[0].length < 2 ? `translate(${(Math.abs(poListGroup.length-index))*r*1.85},0) rotate(360)`:`translate(${(1+Math.abs(poListGroup.length-index))*r*1.85},0) rotate(360)`)
 }
 function poListNodeHide(target?:EventTarget){
     let e = d3.event as MouseEvent;
-    let currentSvgGroup:d3.Selection<any>;
-    if(!target) currentSvgGroup = d3.select(e.target);
-    else currentSvgGroup = d3.select(target);
+    let currentNodeGroup:d3.Selection<any>;
+    if(!target) currentNodeGroup = d3.select(e.target);
+    else currentNodeGroup = d3.select(target);
     
-    let poListGroup = currentSvgGroup.selectAll('.poListNode');
+    let poListGroup = currentNodeGroup.selectAll('.poListNode');
     poListGroup.transition().duration(duration)
         .attr('transform',(d,index)=>poListGroup[0].length < 2 ?`translate(${(Math.abs(poListGroup.length-index))*r*0.2},0) rotate(-180)`:`translate(${(1+Math.abs(poListGroup.length-index))*r*0.2},0) rotate(-180)`)
 }
