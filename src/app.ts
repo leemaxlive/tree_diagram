@@ -205,15 +205,6 @@ function update(nodes:TreeNode[],src:TreeNode[]){//src变化的节点
         .style('fill-opacity',0.01)
         .style('stroke-opacity',0.01)
         .attr('class','node')
-        .on('mouseenter',function(){
-            poListNodeShow(); 
-            shiftNodes(d3.select(this).datum());
-            update(svgGroup.selectAll('g.node').data(),nodeToggled);
-        })
-        .on('mouseleave',()=>{
-            poListNodeHide();
-            update(updateNodesData(),nodeToggled);
-        })
         .attr('transform',d=>{
             let o = d.parent;
             let translate:string;
@@ -228,6 +219,7 @@ function update(nodes:TreeNode[],src:TreeNode[]){//src变化的节点
             }
             return translate;
         })
+    toggleNodeGroupHandlers(nodeGroup,'bind')
     let mainNodeGroup = nodeGroup.append('g').attr('class','mainNode');
     mainNodeGroup.append('title').text(d=>d.title);
     mainNodeGroup.append('circle').attr('r',r).on('click',function(d){//切换展开或收起被点节点
@@ -235,7 +227,7 @@ function update(nodes:TreeNode[],src:TreeNode[]){//src变化的节点
 
         //不让节点在变化时触发事件
         let currentNodeGroup = d3.select($(this).closest('.node')[0]);
-        currentNodeGroup.on('mouseenter',null).on('mouseleave',null);
+        toggleNodeGroupHandlers(currentNodeGroup,'unbind');
         if(currentNodeGroup.attr('class').indexOf('pined') == -1){
             poListNodeHide(currentNodeGroup[0][0]);
             update(updateNodesData(),nodeToggled);
@@ -250,15 +242,7 @@ function update(nodes:TreeNode[],src:TreeNode[]){//src变化的节点
         //节点在变化完成后重新加触发事件（事件排队）
         setTimeout(()=>{
             if(currentNodeGroup.attr('class').indexOf('pined') == -1)
-                currentNodeGroup.on('mouseleave',()=>{
-                    poListNodeHide();
-                    update(updateNodesData(),nodeToggled)
-                })
-                .on('mouseenter',function(){
-                    poListNodeShow();
-                    shiftNodes(d3.select(this).datum());
-                    update(svgGroup.selectAll('g.node').data(),nodeToggled);
-                })
+                toggleNodeGroupHandlers(currentNodeGroup,'bind');
         },duration)
     })
     mainNodeGroup.append('text').text(d=>d.title.length>5?d.title.slice(0,5)+'...':d.title);
@@ -288,7 +272,9 @@ function update(nodes:TreeNode[],src:TreeNode[]){//src变化的节点
                         let currentPinGroup = d3.select(e.currentTarget);
                         let currentNodeGroup = d3.select($(e.currentTarget).closest('.node')[0]);
                         if(currentNodeGroup.attr('class').indexOf('pined') == -1){
-                            currentNodeGroup.attr('class','node pined').on('mouseleave',null).on('mouseenter',null);
+
+                            toggleNodeGroupHandlers(currentNodeGroup.attr('class','node pined'),'unbind');
+
                             currentPinGroup.attr('transform',`translate(${r},0) rotate(45)`).select('use').attr('xlink:href','#icon-tudingfill');
                             nodePined.push(currentNodeGroup.datum());
                         }else{
@@ -299,16 +285,7 @@ function update(nodes:TreeNode[],src:TreeNode[]){//src变化的节点
                             isPinedAll=false;
                             nodePined = svgGroup.selectAll('.node.pined').data();
                             
-                            currentNodeGroup.attr('class','node')
-                                .on('mouseleave',()=>{
-                                    poListNodeHide();
-                                    update(updateNodesData(),nodeToggled);
-                                })
-                                .on('mouseenter',function(){
-                                    poListNodeShow();
-                                    shiftNodes(d3.select(this).datum());
-                                    update(svgGroup.selectAll('g.node').data(),nodeToggled);
-                                })
+                            toggleNodeGroupHandlers(currentNodeGroup.attr('class','node'),'bind');
 
                         }
                     })
@@ -328,25 +305,16 @@ function update(nodes:TreeNode[],src:TreeNode[]){//src变化的节点
             poListNodeShow(item);
             let currentNodeGroup = d3.select(item);
             let currentPinGroup = currentNodeGroup.select('.pin');
-            currentNodeGroup.attr('class','node pined').on('mouseleave',null).on('mouseenter',null);
+            toggleNodeGroupHandlers(currentNodeGroup.attr('class','node pined'),'unbind');
             currentPinGroup.attr('transform',`translate(${r},0) rotate(45)`).select('use').attr('xlink:href','#icon-tudingfill');
         })
-    else if(!isPinedAll && svgGroup.selectAll('.pined')[0].length == nodesCount)
+    else if(!isPinedAll && !isPinedAll,!isPinedAll && svgGroup.selectAll('.pined')[0].length == svgGroup.selectAll('.node')[0].length)
         nodeUpdate[0].forEach(item=>{
             poListNodeHide(item);
             let currentNodeGroup = d3.select(item);
             let currentPinGroup = currentNodeGroup.select('.pin');
             currentPinGroup.attr('transform',`translate(${r},0) rotate(90)`).select('use').attr('xlink:href','#icon-tudingkong');
-            currentNodeGroup.attr('class','node')
-                .on('mouseenter',function(){
-                    poListNodeShow(); 
-                    shiftNodes(d3.select(this).datum());
-                    update(svgGroup.selectAll('g.node').data(),nodeToggled);
-                })
-                .on('mouseleave',()=>{
-                    poListNodeHide();
-                    update(updateNodesData(),nodeToggled);
-                })
+            toggleNodeGroupHandlers(currentNodeGroup.attr('class','node'),'bind');
         })
 
     //在新增的节点里添加icon
@@ -539,6 +507,21 @@ function appendPinSwitchBtn(){
         }
         update(updateNodesData(),nodeToggled);
     })
+}
+
+function toggleNodeGroupHandlers(nodeGroup:d3.Selection<any>,type:'bind'|'unbind'){
+    if(type == 'bind')
+        nodeGroup.on('mouseenter',function(){
+            poListNodeShow(); 
+            shiftNodes(d3.select(this).datum());
+            update(svgGroup.selectAll('g.node').data(),nodeToggled);
+        })
+        .on('mouseleave',()=>{
+            poListNodeHide();
+            update(updateNodesData(),nodeToggled);
+        })
+    else if(type == 'unbind')
+        nodeGroup.on('mouseenter',null).on('mouseleave',null);
 }
 
 function togglePinSwitchBtn(){
